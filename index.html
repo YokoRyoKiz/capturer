@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動画スナップショット抽出ツール | High-Res Video Frame Extractor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                    <line x1="7" y1="2" x2="7" y2="22"></line>
+                    <line x1="17" y1="2" x2="17" y2="22"></line>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <line x1="2" y1="7" x2="7" y2="7"></line>
+                    <line x1="2" y1="17" x2="7" y2="17"></line>
+                    <line x1="17" y1="17" x2="22" y2="17"></line>
+                    <line x1="17" y1="7" x2="22" y2="7"></line>
+                </svg>
+                <span>FrameCap Pro</span>
+            </div>
+            <div class="header-subtitle">動画の一瞬を最高画質PNGで切り出し</div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Drop Zone (Initial State) -->
+            <section id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="upload-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h2>動画ファイルをドラッグ＆ドロップ</h2>
+                    <p>またはファイルを選択してください（.mp4, .webm, .mov など）</p>
+                    <label for="video-input" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></label>
+                        ファイルを選択
+                    </label>
+                    <input type="file" id="video-input" accept="video/*" style="display: none;">
+                </div>
+            </section>
+
+            <!-- Workspace (Active Video State) -->
+            <section id="workspace" class="workspace hidden">
+                <!-- Video Stage -->
+                <div class="video-container">
+                    <video id="video-player" preload="auto" playsinline></video>
+                    <div id="video-overlay-info" class="video-overlay-info">
+                        <span id="badge-resolution" class="badge">-- x --</span>
+                        <span id="badge-fps" class="badge">-- fps</span>
+                    </div>
+                </div>
+
+                <!-- Video Controls Panel -->
+                <div class="controls-panel">
+                    <!-- Seek Slider -->
+                    <div class="timeline-row">
+                        <span id="time-current" class="time-display">00:00:00.000</span>
+                        <div class="seek-bar-wrapper">
+                            <input type="range" id="seek-bar" min="0" max="100" step="0.001" value="0">
+                            <div id="seek-progress" class="seek-progress"></div>
+                        </div>
+                        <span id="time-duration" class="time-display">00:00:00.000</span>
+                    </div>
+
+                    <!-- Action Bar -->
+                    <div class="action-bar">
+                        <!-- Left Group: Play & Step Controls -->
+                        <div class="control-group">
+                            <button id="btn-play" class="btn btn-icon" title="再生/一時停止 (Space)">
+                                <svg id="icon-play" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                <svg id="icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                            </button>
+                            <div class="divider"></div>
+                            <button id="btn-step-back-fast" class="btn btn-secondary" title="-1秒 (Shift+←)">-1s</button>
+                            <button id="btn-step-back" class="btn btn-secondary btn-step" title="1フレーム戻る (←)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                前のコマ
+                            </button>
+                            <button id="btn-step-forward" class="btn btn-secondary btn-step" title="1フレーム進む (→)">
+                                次のコマ
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                            <button id="btn-step-forward-fast" class="btn btn-secondary" title="+1秒 (Shift+→)">+1s</button>
+                        </div>
+
+                        <!-- Middle Group: Step interval setting -->
+                        <div class="control-group step-setting">
+                            <label for="step-interval">コマ送り単位:</label>
+                            <select id="step-interval" class="select-input">
+                                <option value="0.016666">1/60秒 (60fps)</option>
+                                <option value="0.033333" selected>1/30秒 (30fps)</option>
+                                <option value="0.041666">1/24秒 (24fps)</option>
+                                <option value="0.1">0.1秒</option>
+                                <option value="0.5">0.5秒</option>
+                            </select>
+                        </div>
+
+                        <!-- Right Group: Primary Capture Button & Change File -->
+                        <div class="control-group">
+                            <label for="video-input-change" class="btn btn-ghost" title="別の動画を選択">
+                                別の動画
+                            </label>
+                            <input type="file" id="video-input-change" accept="video/*" style="display: none;">
+                            
+                            <button id="btn-capture" class="btn btn-capture btn-large" title="高画質PNGとして保存 (Enter / C)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                                <span>PNG化（キャプチャ）</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard shortcuts guide -->
+                    <div class="keyboard-hints">
+                        <span><kbd>←</kbd> / <kbd>→</kbd> コマ送り</span>
+                        <span><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd> 1秒移動</span>
+                        <span><kbd>Space</kbd> 再生/一時停止</span>
+                        <span><kbd>Enter</kbd> または <kbd>C</kbd> PNG切り取り</span>
+                    </div>
+                </div>
+
+                <!-- Capture History / Gallery Section -->
+                <section class="gallery-section">
+                    <div class="gallery-header">
+                        <h3>切り出した画像ギャラリー (<span id="gallery-count">0</span>)</h3>
+                        <button id="btn-clear-gallery" class="btn btn-ghost btn-sm" style="display: none;">すべて消去</button>
+                    </div>
+                    <div id="gallery-grid" class="gallery-grid">
+                        <div class="empty-gallery-msg">
+                            「PNG化」ボタンを押すと、元解像度の切り出し画像がここに保存・表示されます。
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
